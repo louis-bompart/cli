@@ -50,14 +50,17 @@ jobs:
           ./node_modules/@oclif/dev-cli/bin/run pack -t="${{ matrix.package-targets }}"
           mv ./dist/version ./dist/${{ matrix.os }}-version
           mv ./dist/coveo-${{ env.tag }}/coveo-${{ env.tag }}.tar.gz ./dist/coveo-${{ env.tag }}/${{ matrix.os }}-coveo-${{ env.tag }}.tar.gz
-      - name: Sign Executable
+      - name: Get Certificate
         if: ${{matrix.os == 'windows-latest'}}
         run: |
           New-Item -Force -ItemType directory -Path tmp 
           echo "${{ secrets.COVEO_PFX }}" > ./tmp/cert.txt
           certutil -decode ./tmp/cert.txt ./tmp/cert.pfx
-          Start-Process -FilePath "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" -ArgumentList "sign /f ./tmp/cert.pfx /p ${{ secrets.COVEO_PFX_PWD }} /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com ./dist/win/coveo-${{env.tag}}-x64.exe" -Wait
-          Start-Process -FilePath "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" -ArgumentList "sign /f ./tmp/cert.pfx /p ${{ secrets.COVEO_PFX_PWD }} /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com ./dist/win/coveo-${{env.tag}}-x86.exe" -Wait
+      - name: Sign Binaries
+        if: ${{matrix.os == 'windows-latest'}}
+        run: |
+          Start-Process -FilePath "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" -ArgumentList "sign /f ./tmp/cert.pfx /p ${{ secrets.COVEO_PFX_PWD }} /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com ./dist/win/coveo-${{env.tag}}-x64.exe" -Wait -RedirectStandardOutput "./tmp/x64stdout.txt" -RedirectStandardError "./tmp/x64stderr.txt"
+          Start-Process -FilePath "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" -ArgumentList "sign /f ./tmp/cert.pfx /p ${{ secrets.COVEO_PFX_PWD }} /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com ./dist/win/coveo-${{env.tag}}-x86.exe" -Wait -RedirectStandardOutput "./tmp/x86stdout.txt" -RedirectStandardError "./tmp/x86stderr.txt"
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
