@@ -54,15 +54,15 @@ jobs:
         working-directory: ./packages/cli
         if: ${{matrix.os == 'windows-latest'}}
         run: |
-          New-Item -Force -ItemType directory -Path tmp 
-          echo "${{ secrets.COVEO_PFX }}" > ./tmp/cert.txt
-          certutil -decode ./tmp/cert.txt ./tmp/cert.pfx
+          New-Item -Force -ItemType directory -Path tmpcert 
+          echo "${{ secrets.COVEO_PFX }}" > ./tmpcert/cert.txt
+          certutil -decode ./tmpcert/cert.txt ./tmpcert/cert.pfx
       - name: Sign Binaries
         working-directory: ./packages/cli
         if: ${{matrix.os == 'windows-latest'}}
         run: |
-          Start-Process -FilePath "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" -ArgumentList "sign /f ./tmp/cert.pfx /p password1234 /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 ./dist/win/coveo-${{env.tag}}-x64.exe" -Wait -RedirectStandardOutput "./tmp/x64stdout.txt" -RedirectStandardError "./tmp/x64stderr.txt"
-          Start-Process -FilePath "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" -ArgumentList "sign /f ./tmp/cert.pfx /p ${{ secrets.COVEO_PFX_PWD }} /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 ./dist/win/coveo-${{env.tag}}-x86.exe" -Wait -RedirectStandardOutput "./tmp/x86stdout.txt" -RedirectStandardError "./tmp/x86stderr.txt"
+          Start-Process -FilePath "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" -ArgumentList "sign /f ./tmpcert/cert.pfx /p password1234 /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 ./dist/win/coveo-${{env.tag}}-x64.exe" -Wait -RedirectStandardOutput "./tmp/x64stdout.txt" -RedirectStandardError "./tmp/x64stderr.txt"
+          Start-Process -FilePath "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe" -ArgumentList "sign /f ./tmpcert/cert.pfx /p ${{ secrets.COVEO_PFX_PWD }} /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 ./dist/win/coveo-${{env.tag}}-x86.exe" -Wait -RedirectStandardOutput "./tmp/x86stdout.txt" -RedirectStandardError "./tmp/x86stderr.txt"
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
@@ -72,4 +72,4 @@ jobs:
         if: ${{ always() }}
         with:
           name: ${{matrix.os}}-tmp-artifacts
-          path: ./packages/cli/tmp
+          path: ./packages/cli/tmpcert
